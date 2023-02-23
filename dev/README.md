@@ -91,7 +91,7 @@ ln -sf /opt/eclipse/eclipse /usr/bin/eclipse
 ### Eclipse setup
 #### Setup Tapestry quickstart
 
-All versions are to be chosen based on the targeted Apache Tapestry version and in accordance with the [Tapestry version table](../README.md#tapestry-version-table) and the [version correspondance table](../README.md#version-correspondance-table).
+All versions are to be chosen based on the targeted Apache Tapestry version and in accordance with the [Tapestry version table](../README.md#tapestry-version-table) and the [version correspondance table](#version-correspondance-table).
 
 Retrieve this project
 ```
