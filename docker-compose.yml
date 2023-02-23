@@ -1,0 +1,6 @@
+version: '2'
+services:
+  tapestry-quickstart:
+    image: ndmalc/tapestry-quickstart:jetty-${TAPESTRY_VERSION}
+    ports:
+      - "8080:8080"

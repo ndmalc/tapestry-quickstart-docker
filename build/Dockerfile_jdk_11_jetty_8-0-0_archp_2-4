@@ -1,0 +1,47 @@
+FROM rockylinux:8
+
+ARG TAPESTRY_VERSION
+ARG APP_FOLDER="/app"
+ARG USER="app"
+
+# Setup user
+RUN useradd -m -s /bin/bash ${USER}
+
+# Install system dependencies
+RUN dnf install -y java-11-openjdk-devel maven \
+    && mkdir ${APP_FOLDER} && chown ${USER}:${USER} ${APP_FOLDER}
+
+USER ${USER}
+WORKDIR ${APP_FOLDER}
+
+# Install tapestry quickstart project
+RUN mvn \
+        -DarchetypeGroupId=org.apache.tapestry \
+        -DarchetypeArtifactId=quickstart \
+        -DarchetypeVersion=${TAPESTRY_VERSION} \
+        -DarchetypeCatalog=local \
+        -DgroupId=com.example \
+        -DartifactId=newapp \
+        -Dversion=1.0-SNAPSHOT \
+        -Dpackage=com.example.newapp \
+        -Dbasedir=${APP_FOLDER} \
+        -Darchetype.interactive=false \
+        --batch-mode \
+        org.apache.maven.plugins:maven-archetype-plugin:2.4:generate
+
+WORKDIR ${APP_FOLDER}/newapp
+
+# Live patch of Tapestry
+COPY --chown=${USER}:${USER} patch ${APP_FOLDER}/patch
+RUN if [ -f ${APP_FOLDER}/patch/patch_file_${TAPESTRY_VERSION}.sh ]; then /bin/bash ${APP_FOLDER}/patch/patch_file_${TAPESTRY_VERSION}.sh; fi
+
+# Install application dependencies
+RUN mvn install --batch-mode \
+    && mvn --batch-mode org.mortbay.jetty:jetty-maven-plugin:8.0.0.v20110901:help
+
+# Cleanup
+RUN rm -rf ${APP_FOLDER}/patch
+
+EXPOSE 8080/tcp
+
+ENTRYPOINT ["/usr/bin/mvn", "-o", "org.mortbay.jetty:jetty-maven-plugin:8.0.0.v20110901:run"]

@@ -1,0 +1,11 @@
+version: '2'
+services:
+  tapestry-quickstart:
+    image: ndmalc/tapestry-quickstart:jetty-${TAPESTRY_VERSION}
+    build: 
+        context: .
+        dockerfile: Dockerfile_jdk_${JDK_VERSION}_jetty_${JETTY_VERSION}_archp_${MVN_ARCHETYPE_PLUGIN_VERSION}
+        args:
+            TAPESTRY_VERSION: ${TAPESTRY_VERSION}
+    ports:
+      - "8080:8080"

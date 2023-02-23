@@ -1,0 +1,51 @@
+FROM centos:7
+
+ARG TAPESTRY_VERSION
+ARG APP_FOLDER="/app"
+ARG USER="app"
+
+# Setup user
+RUN useradd -m -s /bin/bash ${USER}
+
+# Install system dependencies
+RUN yum install -y java-1.7.0-openjdk-devel maven epel-release \
+    && yum install -y xmlstarlet \
+    && mkdir ${APP_FOLDER} && chown ${USER}:${USER} ${APP_FOLDER}
+
+USER ${USER}
+WORKDIR ${APP_FOLDER}
+
+# Setup Maven compatibility configuration
+COPY --chown=${USER}:${USER} .m2 /home/${USER}/.m2
+
+# Install tapestry quickstart project
+RUN mvn \
+        -DarchetypeGroupId=org.apache.tapestry \
+        -DarchetypeArtifactId=quickstart \
+        -DarchetypeVersion=${TAPESTRY_VERSION} \
+        -DarchetypeCatalog=local \
+        -DgroupId=com.example \
+        -DartifactId=newapp \
+        -Dversion=1.0-SNAPSHOT \
+        -Dpackage=com.example.newapp \
+        -Dbasedir=${APP_FOLDER} \
+        -Darchetype.interactive=false \
+        --batch-mode \
+        org.apache.maven.plugins:maven-archetype-plugin:2.4:generate
+
+WORKDIR ${APP_FOLDER}/newapp
+
+# Live patch of Tapestry
+COPY --chown=${USER}:${USER} patch ${APP_FOLDER}/patch
+RUN if [ -f ${APP_FOLDER}/patch/patch_pom_${TAPESTRY_VERSION}.sh ]; then /bin/bash ${APP_FOLDER}/patch/patch_pom_${TAPESTRY_VERSION}.sh; fi
+
+# Install application dependencies
+RUN mvn install --batch-mode \
+    && mvn --batch-mode org.mortbay.jetty:jetty-maven-plugin:7.6.0.v20120127:help
+
+# Cleanup
+RUN rm -rf ${APP_FOLDER}/patch
+
+EXPOSE 8080/tcp
+
+ENTRYPOINT ["/usr/bin/mvn", "-o", "org.mortbay.jetty:jetty-maven-plugin:7.6.0.v20120127:run"]
